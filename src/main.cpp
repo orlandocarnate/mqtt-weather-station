@@ -6,9 +6,10 @@
 #define DHTPIN 4       // GPIO pin connected to DATA
 #define DHTTYPE DHT11  // DHT11 or DHT22
 #define uS_TO_S_FACTOR 1000000ULL
-#define TIME_TO_SLEEP 300  // 5 minutes
+#define TIME_TO_SLEEP 60  // 5 minutes
+#define LED_PIN 2
 
-RTC_DATA_ATTR int bootCount = 0; // counter
+// RTC_DATA_ATTR int bootCount = 0; // counter
 
 const char* mqtt_server = MQTT_SERVER;  // e.g. "192.168.1.100"
 
@@ -48,10 +49,17 @@ void setup() {
   Serial.begin(115200);
   delay(100);
 
-  bootCount++;
-  Serial.println("Boot #" + String(bootCount));
-
   dht.begin();
+  
+  pinMode(LED_PIN, OUTPUT);
+}
+
+void loop() {
+  // blink awake
+  digitalWrite(LED_PIN, HIGH);
+  delay(500);
+  digitalWrite(LED_PIN, LOW);
+
   setup_wifi();
   reconnect_mqtt();
 
@@ -75,12 +83,15 @@ void setup() {
   client.disconnect();
   WiFi.disconnect();
   delay(500); // delay to finish flushing any remaining packets
-
+  
   esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR);
-  Serial.println("Sleeping for " + String(TIME_TO_SLEEP) + " seconds...");
-  esp_deep_sleep_start();
-}
+  Serial.println("LIGHT Sleeping for " + String(TIME_TO_SLEEP) + " seconds...");
+  delay(500); // delay after waking
+  esp_light_sleep_start();
+  delay(500); // delay after waking
 
-void loop() {
-  // NO LONGER USED WHILE USING DEEP SLEEP
+
+
+  
+  Serial.println("Woke Up!");
 }
