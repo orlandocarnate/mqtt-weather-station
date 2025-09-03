@@ -5,6 +5,10 @@
 
 #define DHTPIN 4       // GPIO pin connected to DATA
 #define DHTTYPE DHT11  // DHT11 or DHT22
+#define uS_TO_S_FACTOR 1000000ULL
+#define TIME_TO_SLEEP 300  // 5 minutes
+
+RTC_DATA_ATTR int bootCount = 0; // counter
 
 const char* mqtt_server = MQTT_SERVER;  // e.g. "192.168.1.100"
 
@@ -25,9 +29,12 @@ void setup_wifi() {
   Serial.println("WiFi connected");
 }
 
-void reconnect() {
+void reconnect_mqtt() {
+  client.setServer(mqtt_server, 1883);  // RabbitMQ MQTT port
+  client.setKeepAlive(60);
+
   while (!client.connected()) {
-    if (client.connect("ESP32Client", "user", "root")) {
+    if (client.connect("ESP32Client", MQTT_USER, MQTT_PASSWORD)) {
       Serial.println("MQTT connected");
     } else {
       Serial.print("MQTT failed, rc=");
@@ -39,21 +46,14 @@ void reconnect() {
 
 void setup() {
   Serial.begin(115200);
+  delay(100);
+
+  bootCount++;
+  Serial.println("Boot #" + String(bootCount));
+
   dht.begin();
   setup_wifi();
-  client.setServer(mqtt_server, 1883);  // RabbitMQ MQTT port
-  client.setKeepAlive(60);              // Set keepalive interval (in seconds)
-}
-
-void outputReadings() {
-  
-}
-
-void loop() {
-  if (!client.connected()) {
-    reconnect();
-  }
-  client.loop();
+  reconnect_mqtt();
 
   float rawTempC = dht.readTemperature();
   float correctedTempC = rawTempC + TEMP_OFFSET_C;
@@ -71,13 +71,16 @@ void loop() {
     Serial.println(payload);
   }
 
-  Serial.print("Temp: ");
-  Serial.print(correctedTempC);
-  Serial.print(" °C / ");
-  Serial.print(tempF);
-  Serial.print(" °F | Humidity: ");
-  Serial.print(correctedHumidity);
-  Serial.println(" %");
+  
+  client.disconnect();
+  WiFi.disconnect();
+  delay(500); // delay to finish flushing any remaining packets
 
-  delay(2000);
+  esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR);
+  Serial.println("Sleeping for " + String(TIME_TO_SLEEP) + " seconds...");
+  esp_deep_sleep_start();
+}
+
+void loop() {
+  // NO LONGER USED WHILE USING DEEP SLEEP
 }
