@@ -1,6 +1,8 @@
 # ESP32 MQTT Weather Station
 This project uses an ESP32 microcontroller paired with a DHT11 sensor to periodically measure temperature and humidity. The device connects to WiFi, publishes sensor data as a JSON payload via MQTT, and routes it through RabbitMQ for backend processing. To conserve battery, the ESP32 enters deep sleep between transmissions, waking every 5–10 minutes to repeat the cycle.
 
+For testing and visualization, MQTT Explorer is used to monitor live payloads, while Node-RED displays the data in real-time dashboards. This setup enables rapid validation of sensor output and message flow across the pipeline.
+
 The backend is designed to consume messages using .NET microservices, enabling structured logging, dashboard integration, and scalable data handling. The sy
 
 ## ESP32 Sensor Lifecycle with MQTT and RabbitMQ

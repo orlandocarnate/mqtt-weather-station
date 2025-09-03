@@ -27,7 +27,7 @@ void setup_wifi() {
 
 void reconnect() {
   while (!client.connected()) {
-    if (client.connect("ESP32Client", "user", "root")) {
+    if (client.connect("ESP32Client", MQTT_USER, MQTT_PASSWORD)) {
       Serial.println("MQTT connected");
     } else {
       Serial.print("MQTT failed, rc=");
